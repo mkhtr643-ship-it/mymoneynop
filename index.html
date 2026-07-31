@@ -403,6 +403,15 @@
   }
   .btn-logout-full:active{ opacity: 0.7; }
 
+  .upgrade-card{
+    background: var(--card); border-radius: var(--radius);
+    padding: 18px; margin-bottom: 20px;
+    border: 1.5px solid rgba(255,159,10,0.4);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .upgrade-title{ font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .upgrade-desc{ font-size: 13px; color: var(--text-secondary); line-height: 1.4; margin: 0 0 16px; }
+
   .hidden{ display: none !important; }
   ::selection{ background: rgba(10,132,255,0.2); }
 </style>
@@ -589,6 +598,29 @@
       <img id="userAvatar" src="" alt="">
       <div class="profile-name" id="userName"></div>
       <div class="profile-email" id="userEmail"></div>
+    </div>
+
+    <div class="upgrade-card hidden" id="upgradeCard">
+      <div class="upgrade-title">⚠️ Simpan Akun Kamu</div>
+      <p class="upgrade-desc">Data tamu cuma tersimpan di perangkat ini. Daftar sekarang biar datanya aman & bisa dibuka dari HP lain — transaksi yang udah ada gak akan hilang.</p>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="upgradeEmail" placeholder="Alamat email">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="upgradePassword" placeholder="Buat password">
+      </div>
+      <button class="btn-submit" id="upgradeSaveBtn" onclick="upgradeWithEmail()">Simpan dengan Email</button>
+      <div class="auth-message" id="upgradeMessage"></div>
+
+      <div class="divider-row">atau</div>
+
+      <button class="btn-social btn-google" onclick="upgradeWithGoogle()">
+        <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.2-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 6.1 29.5 4 24 4c-7.7 0-14.3 4.4-17.7 10.7z"/><path fill="#4CAF50" d="M24 44c5.3 0 10.2-2 13.8-5.4l-6.4-5.3c-2 1.4-4.6 2.2-7.4 2.2-5.3 0-9.7-3.1-11.3-7.5l-6.6 5.1C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.7l6.4 5.3C40.9 36.2 44 30.6 44 24c0-1.2-.1-2.3-.4-3.5z"/></svg>
+        Hubungkan dengan Google
+      </button>
     </div>
 
     <div class="section-title">Budget Bulanan</div>
@@ -825,6 +857,52 @@ function populateProfil(user){
   document.getElementById("userName").textContent = user.user_metadata.full_name || user.email || "Akun Tamu";
   document.getElementById("userEmail").textContent = user.email || "Data hanya tersimpan di perangkat ini";
   document.getElementById("budgetInput").value = user.user_metadata.monthly_budget || "";
+  document.getElementById("upgradeCard").classList.toggle("hidden", !user.is_anonymous);
+}
+
+async function upgradeWithEmail(){
+  const email = document.getElementById("upgradeEmail").value.trim();
+  const password = document.getElementById("upgradePassword").value;
+  const msgEl = document.getElementById("upgradeMessage");
+
+  if(!email || !password){
+    msgEl.textContent = "Isi email dan password dulu ya.";
+    msgEl.className = "auth-message error";
+    return;
+  }
+  if(password.length < 6){
+    msgEl.textContent = "Password minimal 6 karakter.";
+    msgEl.className = "auth-message error";
+    return;
+  }
+
+  const btn = document.getElementById("upgradeSaveBtn");
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Menyimpan...";
+
+  const { data: updated, error } = await sb.auth.updateUser({ email, password });
+
+  btn.disabled = false;
+  btn.textContent = original;
+
+  if(error){
+    msgEl.textContent = translateAuthError(error.message);
+    msgEl.className = "auth-message error";
+    return;
+  }
+
+  currentUser = updated.user;
+  msgEl.textContent = "Berhasil! Cek email kamu buat konfirmasi ya.";
+  msgEl.className = "auth-message success";
+  populateProfil(currentUser);
+}
+
+async function upgradeWithGoogle(){
+  await sb.auth.linkIdentity({
+    provider: "google",
+    options: { redirectTo: window.location.href }
+  });
 }
 
 function showApp(user){
