@@ -13,9 +13,10 @@
   :root{
     --bg: #F5F5F7;
     --card: #FFFFFF;
-    --text: #1C1C1E;
+    --text: #020202;
     --text-secondary: #8A8A8E;
-    --accent: #0A84FF;
+    --accent: #3E6E8C;
+    --candy: #B2D5E5;
     --income: #34C759;
     --expense: #FF3B30;
     --divider: #E5E5EA;
@@ -54,7 +55,7 @@
     width: 72px; height: 72px;
     margin: 0 auto 16px;
     border-radius: 20px;
-    background: linear-gradient(135deg, #0A84FF 0%, #0040DD 100%);
+    background: linear-gradient(135deg, #3E6E8C 0%, #020202 100%);
     display:flex; align-items:center; justify-content:center;
     box-shadow: 0 10px 22px rgba(10,132,255,0.35);
   }
@@ -120,7 +121,7 @@
 
   .login-panel{
     flex: 1;
-    background: linear-gradient(180deg, #0A84FF 0%, #1C1C1E 100%);
+    background: linear-gradient(180deg, #3E6E8C 0%, #020202 100%);
     padding: 6px 22px calc(40px + env(safe-area-inset-bottom));
     color: white;
   }
@@ -161,7 +162,7 @@
 
   /* Header balance card */
   .balance-card{
-    background: linear-gradient(180deg, #1C1C1E 0%, #2C2C2E 100%);
+    background: linear-gradient(180deg, #020202 0%, #1A1A1D 100%);
     border-radius: 24px;
     padding: 28px 24px;
     color: white;
@@ -302,10 +303,18 @@
   .tx-amount{ font-size: 15px; font-weight: 700; white-space: nowrap; }
   .tx-amount.in{ color: var(--income); }
   .tx-amount.out{ color: var(--expense); }
-  .tx-item{ position: relative; }
+  .tx-item{ position: relative; cursor: pointer; }
+  .tx-item:active{ background: #F7F7F9; }
   .tx-delete{
     background: none; border:none; color: #C7C7CC; font-size: 18px; padding: 0 0 0 6px;
   }
+
+  .btn-cancel-edit{
+    display:block; width:100%; text-align:center; margin-top: 10px;
+    background:none; border:none; color: var(--text-secondary);
+    font-size: 13.5px; font-weight: 600;
+  }
+  .btn-cancel-edit:active{ opacity: 0.6; }
 
   .empty-state{
     text-align:center; padding: 40px 20px; color: var(--text-secondary); font-size: 14px;
@@ -432,7 +441,7 @@
   </div>
 
   <svg class="wave-divider" viewBox="0 0 500 80" preserveAspectRatio="none">
-    <path d="M0,50 Q250,0 500,50 L500,80 L0,80 Z" fill="#0A84FF"/>
+    <path d="M0,50 Q250,0 500,50 L500,80 L0,80 Z" fill="#3E6E8C"/>
   </svg>
 
   <div class="login-panel">
@@ -547,6 +556,7 @@
       </div>
 
       <button class="btn-submit" id="btnSubmit" onclick="tambahTransaksi()">Tambah Transaksi</button>
+      <button class="btn-cancel-edit hidden" id="cancelEditBtn" onclick="cancelEdit()">Batal Edit</button>
     </div>
 
     <div class="section-title">Pengeluaran per Kategori</div>
@@ -675,6 +685,7 @@ const ICONS = {
 let tipeAktif = "Masuk";
 let data = [];
 let currentUser = null;
+let editingId = null;
 
 // ---------- AUTH ----------
 let authMode = "login"; // "login" | "signup"
@@ -956,7 +967,7 @@ function formatRpShort(n){
 }
 
 // ---------- STATISTIK (donut chart) ----------
-const CHART_COLORS = ["#FF9500","#FF3B30","#0A84FF","#34C759","#AF52DE","#FFD60A","#8E8E93","#5E5CE6"];
+const CHART_COLORS = ["#FF9500","#FF3B30","#3E6E8C","#34C759","#AF52DE","#FFD60A","#8E8E93","#5E5CE6"];
 
 function renderStatistik(){
   document.getElementById("statMonthLabel").textContent = monthLabel(viewMonth);
@@ -1152,6 +1163,28 @@ function formatRp(n){
   return "Rp " + Number(n).toLocaleString("id-ID");
 }
 
+function startEdit(id){
+  const t = data.find(x => x.id === id);
+  if(!t) return;
+  editingId = id;
+  setTipe(t.tipe);
+  document.getElementById("inputJumlah").value = t.jumlah;
+  document.getElementById("inputKategori").value = t.kategori;
+  document.getElementById("inputCatatan").value = t.catatan || "";
+  document.getElementById("btnSubmit").textContent = "Update Transaksi";
+  document.getElementById("cancelEditBtn").classList.remove("hidden");
+  document.querySelector(".form-card").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function cancelEdit(){
+  editingId = null;
+  document.getElementById("inputJumlah").value = "";
+  document.getElementById("inputKategori").selectedIndex = 0;
+  document.getElementById("inputCatatan").value = "";
+  document.getElementById("btnSubmit").textContent = "Tambah Transaksi";
+  document.getElementById("cancelEditBtn").classList.add("hidden");
+}
+
 async function tambahTransaksi(){
   const jumlahInput = document.getElementById("inputJumlah");
   const jumlah = parseInt(jumlahInput.value);
@@ -1163,37 +1196,62 @@ async function tambahTransaksi(){
   }
   const kategori = document.getElementById("inputKategori").value;
   const catatan = document.getElementById("inputCatatan").value.trim();
-  const now = new Date();
-  const tanggal = now.toLocaleDateString("id-ID", {day:"2-digit", month:"short"}) + " " +
-                  now.toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit"});
 
   const btn = document.getElementById("btnSubmit");
   btn.disabled = true;
-  btn.textContent = "Menyimpan...";
+  const busyText = editingId ? "Memperbarui..." : "Menyimpan...";
+  btn.textContent = busyText;
 
-  const { error } = await sb.from("transactions").insert({
-    user_id: currentUser.id,
-    tipe: tipeAktif,
-    jumlah,
-    kategori,
-    catatan,
-    tanggal,
-    ts: now.getTime()
-  });
+  let error;
+
+  if(editingId){
+    // Insert the corrected row first, only remove the old one once that succeeds.
+    // This way a network hiccup can never delete data without replacing it.
+    const existing = data.find(x => x.id === editingId);
+    const ins = await sb.from("transactions").insert({
+      user_id: currentUser.id,
+      tipe: tipeAktif,
+      jumlah,
+      kategori,
+      catatan,
+      tanggal: existing ? existing.tanggal : new Date().toLocaleDateString("id-ID", {day:"2-digit", month:"short"}),
+      ts: existing ? existing.ts : Date.now()
+    });
+    if(!ins.error){
+      const del = await sb.from("transactions").delete().eq("id", editingId);
+      error = del.error;
+    } else {
+      error = ins.error;
+    }
+  } else {
+    const now = new Date();
+    const tanggal = now.toLocaleDateString("id-ID", {day:"2-digit", month:"short"}) + " " +
+                    now.toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit"});
+    const ins = await sb.from("transactions").insert({
+      user_id: currentUser.id,
+      tipe: tipeAktif,
+      jumlah,
+      kategori,
+      catatan,
+      tanggal,
+      ts: now.getTime()
+    });
+    error = ins.error;
+  }
 
   btn.disabled = false;
-  btn.textContent = "Tambah Transaksi";
 
-  if (error) { console.error(error); alert("Gagal menyimpan, coba lagi."); return; }
+  if (error) { console.error(error); alert("Gagal menyimpan, coba lagi."); btn.textContent = editingId ? "Update Transaksi" : "Tambah Transaksi"; return; }
 
-  document.getElementById("inputJumlah").value = "";
-  document.getElementById("inputCatatan").value = "";
+  cancelEdit();
   await loadTransaksi();
 }
 
 async function hapusTransaksi(id){
+  if(!confirm("Hapus transaksi ini?")) return;
   const { error } = await sb.from("transactions").delete().eq("id", id);
   if (error) { console.error(error); return; }
+  if(editingId === id) cancelEdit();
   await loadTransaksi();
 }
 
@@ -1212,14 +1270,14 @@ function render(){
   } else {
     const sorted = [...data].sort((a,b)=>b.ts-a.ts);
     txList.innerHTML = sorted.map(t => `
-      <div class="tx-item">
+      <div class="tx-item" onclick="startEdit('${t.id}')">
         <div class="tx-icon ${t.tipe==='Masuk'?'in':'out'}">${ICONS[t.kategori]||'📌'}</div>
         <div class="tx-info">
           <div class="tx-cat">${t.kategori}</div>
           <div class="tx-meta">${t.tanggal}${t.catatan? " · " + t.catatan : ""}</div>
         </div>
         <div class="tx-amount ${t.tipe==='Masuk'?'in':'out'}">${t.tipe==='Masuk'?'+':'−'} ${formatRp(t.jumlah)}</div>
-        <button class="tx-delete" onclick="hapusTransaksi('${t.id}')">✕</button>
+        <button class="tx-delete" onclick="event.stopPropagation(); hapusTransaksi('${t.id}')">✕</button>
       </div>
     `).join("");
   }
