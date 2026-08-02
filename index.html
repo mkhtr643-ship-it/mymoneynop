@@ -153,6 +153,55 @@
   .login-panel .btn-social{ box-shadow: none; }
   .btn-guest-dark{ color: rgba(255,255,255,0.75); }
 
+  /* Landing hero (marketing intro before the login form) */
+  .landing-hero{
+    padding: calc(52px + env(safe-area-inset-top)) 24px 36px;
+    text-align: center;
+  }
+  .landing-title{
+    font-size: 30px; font-weight: 800; line-height: 1.18; letter-spacing: -0.5px;
+    margin: 6px 0 12px;
+  }
+  .landing-sub{
+    font-size: 14px; color: var(--text-secondary); line-height: 1.55;
+    margin: 0 auto 26px; max-width: 320px;
+  }
+  .btn-cta-primary{
+    display:inline-flex; align-items:center; gap: 8px;
+    background: linear-gradient(135deg, #3E6E8C 0%, #020202 100%);
+    color: white; border: none; padding: 15px 34px; border-radius: 16px;
+    font-size: 15.5px; font-weight: 700;
+    box-shadow: 0 10px 24px rgba(62,110,140,0.32);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  .btn-cta-primary:active{ opacity: 0.85; transform: scale(0.97); }
+
+  .landing-features{
+    margin-top: 36px; display:flex; flex-direction:column; gap: 12px; text-align:left;
+  }
+  .feature-item{
+    display:flex; align-items:center; gap: 14px;
+    background: var(--card); border-radius: 18px; padding: 14px 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .feature-icon{
+    width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
+    background: rgba(62,110,140,0.1); color: var(--accent);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .feature-icon svg{ width: 22px; height: 22px; }
+  .feature-title{ font-size: 14px; font-weight: 700; }
+  .feature-desc{ font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+
+  .landing-scroll-hint{
+    margin-top: 30px; font-size: 12.5px; font-weight: 600; color: var(--text-secondary);
+  }
+
+  .login-footer{
+    text-align:center; margin-top: 26px;
+    font-size: 11.5px; color: rgba(255,255,255,0.45);
+  }
+
   /* Top user bar */
   .user-bar{
     display:flex; align-items:center; justify-content:space-between;
@@ -263,9 +312,9 @@
     padding: 14px 0;
     border-radius: 14px;
     margin-top: 4px;
-    transition: opacity 0.15s ease;
+    transition: opacity 0.15s ease, transform 0.15s ease;
   }
-  .btn-submit:active{ opacity: 0.7; }
+  .btn-submit:active{ opacity: 0.7; transform: scale(0.98); }
   .btn-submit:disabled{ opacity: 0.5; }
 
   /* Section title */
@@ -308,7 +357,15 @@
   .tx-amount{ font-size: 15px; font-weight: 700; white-space: nowrap; }
   .tx-amount.in{ color: var(--income); }
   .tx-amount.out{ color: var(--expense); }
-  .tx-item{ position: relative; cursor: pointer; }
+  .tx-item{ position: relative; cursor: pointer; animation: fadeInUp 0.4s ease backwards; }
+  .tx-item:nth-child(1), .wish-row:nth-child(1), .cat-row:nth-child(1){ animation-delay: 0.02s; }
+  .tx-item:nth-child(2), .wish-row:nth-child(2), .cat-row:nth-child(2){ animation-delay: 0.05s; }
+  .tx-item:nth-child(3), .wish-row:nth-child(3), .cat-row:nth-child(3){ animation-delay: 0.08s; }
+  .tx-item:nth-child(4), .wish-row:nth-child(4), .cat-row:nth-child(4){ animation-delay: 0.11s; }
+  .tx-item:nth-child(5), .wish-row:nth-child(5), .cat-row:nth-child(5){ animation-delay: 0.14s; }
+  .tx-item:nth-child(6), .wish-row:nth-child(6), .cat-row:nth-child(6){ animation-delay: 0.17s; }
+  .tx-item:nth-child(7), .wish-row:nth-child(7), .cat-row:nth-child(7){ animation-delay: 0.20s; }
+  .tx-item:nth-child(8), .wish-row:nth-child(8), .cat-row:nth-child(8){ animation-delay: 0.23s; }
   .tx-item:active{ background: #F7F7F9; }
   .tx-delete{
     background: none; border:none; color: #C7C7CC; font-size: 18px; padding: 0 0 0 6px;
@@ -328,6 +385,7 @@
   /* Category summary */
   .cat-row{
     display:flex; align-items:center; padding: 12px 16px; border-bottom: 1px solid var(--divider);
+    animation: fadeInUp 0.4s ease backwards;
   }
   .cat-row:last-child{ border-bottom:none; }
   .cat-name{ flex:1; font-size: 14.5px; font-weight: 500; }
@@ -362,6 +420,12 @@
   }
   .tab-btn svg{ width: 21px; height: 21px; }
   .tab-btn.active{ color: var(--accent); }
+
+  @keyframes fadeInUp{
+    from{ opacity: 0; transform: translateY(8px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+  .tab-page:not(.hidden){ animation: fadeInUp 0.35s ease; }
 
   /* Month navigator */
   .month-nav{
@@ -427,6 +491,7 @@
   .wish-row{
     background: var(--card); border-radius: 16px; padding: 14px 16px;
     margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    animation: fadeInUp 0.4s ease backwards;
   }
   .wish-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; gap: 8px; }
   .wish-name{ font-size: 14.5px; font-weight: 700; }
@@ -455,7 +520,51 @@
 <!-- LOGIN SCREEN -->
 <div class="container login-screen" id="loginScreen">
 
-  <div class="login-hero">
+  <div class="landing-hero">
+    <div class="app-icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M4 8a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/>
+        <circle cx="16.3" cy="13" r="1.3" fill="white"/>
+      </svg>
+    </div>
+    <h1 class="landing-title">Kelola Uangmu,<br>Tanpa Ribet</h1>
+    <p class="landing-sub">Catat pemasukan &amp; pengeluaran, pantau lewat statistik, dan wujudkan barang impianmu — semua dalam satu tempat.</p>
+    <button class="btn-cta-primary" onclick="document.getElementById('loginHeroAnchor').scrollIntoView({behavior:'smooth'})">Mulai Sekarang</button>
+
+    <div class="landing-features">
+      <div class="feature-item">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="12"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="20" y1="20" x2="20" y2="9"/></svg>
+        </div>
+        <div>
+          <div class="feature-title">Catat & Pantau</div>
+          <div class="feature-desc">Transaksi harian dengan statistik yang jelas</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        </div>
+        <div>
+          <div class="feature-title">Kalender Keuangan</div>
+          <div class="feature-desc">Lihat arus kas harian dalam sekejap</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <div>
+          <div class="feature-title">Wishlist & Budget</div>
+          <div class="feature-desc">Rencanakan target, tetap on-track</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="landing-scroll-hint">↓ Masuk / Daftar</div>
+  </div>
+
+  <div class="login-hero" id="loginHeroAnchor">
     <div class="app-icon">
       <svg viewBox="0 0 24 24" fill="none">
         <path d="M4 8a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/>
@@ -508,6 +617,8 @@
     </button>
 
     <button class="btn-guest btn-guest-dark" onclick="loginGuest()">Lanjut sebagai Tamu</button>
+
+    <div class="login-footer">© 2026 Dompet · Dibuat dengan ❤️</div>
   </div>
 </div>
 
@@ -1017,14 +1128,13 @@ function formatRpShort(n){
 }
 
 // ---------- STATISTIK (donut chart) ----------
-const CHART_COLORS = ["#FF9500","#FF3B30","#3E6E8C","#34C759","#AF52DE","#FFD60A","#8E8E93","#5E5CE6"];
 
 function renderStatistik(){
   document.getElementById("statMonthLabel").textContent = monthLabel(viewMonth);
 
   const monthTx = getMonthData(viewMonth).filter(t => t.tipe === "Keluar");
   const total = monthTx.reduce((a,b)=>a+Number(b.jumlah),0);
-  document.getElementById("donutTotal").textContent = formatRp(total);
+  animateNumber(document.getElementById("donutTotal"), total);
 
   const perKategori = {};
   monthTx.forEach(t => { perKategori[t.kategori] = (perKategori[t.kategori]||0) + Number(t.jumlah); });
@@ -1042,18 +1152,18 @@ function renderStatistik(){
   const r = 80, circumference = 2 * Math.PI * r;
   let cumulative = 0;
   let circles = "";
-  entries.forEach(([kat, jml], i) => {
+  entries.forEach(([kat, jml]) => {
     const pct = jml / total;
     const segLen = pct * circumference;
     const offset = -cumulative * circumference;
-    circles += `<circle cx="100" cy="100" r="${r}" fill="none" stroke="${CHART_COLORS[i % CHART_COLORS.length]}" stroke-width="26" stroke-dasharray="${segLen} ${circumference - segLen}" stroke-dashoffset="${offset}"/>`;
+    circles += `<circle cx="100" cy="100" r="${r}" fill="none" stroke="${categoryColor(kat)}" stroke-width="26" stroke-dasharray="${segLen} ${circumference - segLen}" stroke-dashoffset="${offset}"/>`;
     cumulative += pct;
   });
   svg.innerHTML = circles;
 
   listEl.innerHTML = entries.map(([kat, jml]) => `
     <div class="tx-item">
-      <div class="tx-icon out">${ICONS[kat]||'📌'}</div>
+      <div class="tx-icon" style="background:${categoryColor(kat)}1F">${ICONS[kat]||'📌'}</div>
       <div class="tx-info">
         <div class="tx-cat">${kat}</div>
         <div class="tx-meta">${Math.round(jml/total*100)}% dari total</div>
@@ -1072,9 +1182,9 @@ function renderKalender(){
   const monthTx = getMonthData(viewMonth);
   const masuk = monthTx.filter(t=>t.tipe==="Masuk").reduce((a,b)=>a+Number(b.jumlah),0);
   const keluar = monthTx.filter(t=>t.tipe==="Keluar").reduce((a,b)=>a+Number(b.jumlah),0);
-  document.getElementById("calMasuk").textContent = formatRp(masuk);
-  document.getElementById("calKeluar").textContent = formatRp(keluar);
-  document.getElementById("calTotal").textContent = formatRp(masuk - keluar);
+  animateNumber(document.getElementById("calMasuk"), masuk);
+  animateNumber(document.getElementById("calKeluar"), keluar);
+  animateNumber(document.getElementById("calTotal"), masuk - keluar);
 
   const perHari = {};
   monthTx.forEach(t => {
@@ -1314,6 +1424,27 @@ function formatRp(n){
   return "Rp " + Number(n).toLocaleString("id-ID");
 }
 
+function animateNumber(el, to){
+  const from = Number(String(el.textContent).replace(/[^0-9-]/g, "")) || 0;
+  if(from === to){ el.textContent = formatRp(to); return; }
+  const duration = 600;
+  const start = performance.now();
+  function tick(now){
+    const t = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = formatRp(Math.round(from + (to - from) * eased));
+    if(t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+const CATEGORY_COLOR_PALETTE = ["#FF9500","#FF3B30","#3E6E8C","#34C759","#AF52DE","#FFD60A","#8E8E93","#5E5CE6","#D4A15C","#7A9CB5"];
+function categoryColor(kat){
+  const keys = Object.keys(ICONS);
+  const idx = keys.indexOf(kat);
+  return CATEGORY_COLOR_PALETTE[idx >= 0 ? idx % CATEGORY_COLOR_PALETTE.length : 0];
+}
+
 function startEdit(id){
   const t = data.find(x => x.id === id);
   if(!t) return;
@@ -1411,9 +1542,9 @@ function render(){
   renderWishTeaser();
   const masuk = data.filter(t=>t.tipe==="Masuk").reduce((a,b)=>a+Number(b.jumlah),0);
   const keluar = data.filter(t=>t.tipe==="Keluar").reduce((a,b)=>a+Number(b.jumlah),0);
-  document.getElementById("saldo").textContent = formatRp(masuk-keluar);
-  document.getElementById("totalMasuk").textContent = formatRp(masuk);
-  document.getElementById("totalKeluar").textContent = formatRp(keluar);
+  animateNumber(document.getElementById("saldo"), masuk-keluar);
+  animateNumber(document.getElementById("totalMasuk"), masuk);
+  animateNumber(document.getElementById("totalKeluar"), keluar);
 
   // Riwayat
   const txList = document.getElementById("txList");
@@ -1423,7 +1554,7 @@ function render(){
     const sorted = [...data].sort((a,b)=>b.ts-a.ts);
     txList.innerHTML = sorted.map(t => `
       <div class="tx-item" onclick="startEdit('${t.id}')">
-        <div class="tx-icon ${t.tipe==='Masuk'?'in':'out'}">${ICONS[t.kategori]||'📌'}</div>
+        <div class="tx-icon" style="background:${categoryColor(t.kategori)}1F">${ICONS[t.kategori]||'📌'}</div>
         <div class="tx-info">
           <div class="tx-cat">${t.kategori}</div>
           <div class="tx-meta">${t.tanggal}${t.catatan? " · " + t.catatan : ""}</div>
