@@ -358,9 +358,9 @@
   .tab-btn{
     background:none; border:none; display:flex; flex-direction:column;
     align-items:center; gap: 3px; color: var(--text-secondary);
-    font-size: 10.5px; font-weight: 600; padding: 4px 10px;
+    font-size: 10px; font-weight: 600; padding: 4px 6px;
   }
-  .tab-btn svg{ width: 22px; height: 22px; }
+  .tab-btn svg{ width: 21px; height: 21px; }
   .tab-btn.active{ color: var(--accent); }
 
   /* Month navigator */
@@ -416,6 +416,26 @@
     font-size: 15px; font-weight: 700;
   }
   .btn-logout-full:active{ opacity: 0.7; }
+
+  .wish-teaser{
+    background: rgba(62,110,140,0.1); color: var(--accent);
+    border-radius: 14px; padding: 12px 14px; margin-bottom: 16px;
+    font-size: 13px; font-weight: 600; line-height: 1.4; cursor: pointer;
+  }
+  .wish-teaser:active{ opacity: 0.7; }
+
+  .wish-row{
+    background: var(--card); border-radius: 16px; padding: 14px 16px;
+    margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .wish-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; gap: 8px; }
+  .wish-name{ font-size: 14.5px; font-weight: 700; }
+  .wish-delete{ background:none; border:none; color:#C7C7CC; font-size: 16px; flex-shrink: 0; }
+  .wish-bar-wrap{ height: 8px; background: #E5E5EA; border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+  .wish-bar{ height: 100%; background: var(--accent); border-radius: 4px; }
+  .wish-bar.done{ background: var(--income); }
+  .wish-meta{ display:flex; justify-content:space-between; font-size: 12.5px; color: var(--text-secondary); font-weight: 600; }
+  .wish-meta .wish-done{ color: var(--income); }
 
   .upgrade-card{
     background: var(--card); border-radius: var(--radius);
@@ -523,6 +543,7 @@
   <!-- BERANDA -->
   <div class="tab-page" id="page-beranda">
     <div class="budget-alert hidden" id="budgetAlert"></div>
+    <div class="wish-teaser hidden" id="wishTeaser" onclick="switchTab('wishlist')"></div>
 
     <div class="balance-card">
       <div class="balance-label">Saldo Saat Ini</div>
@@ -651,6 +672,25 @@
     <button class="btn-logout-full" onclick="logout()">Keluar dari Akun</button>
   </div>
 
+  <!-- WISHLIST -->
+  <div class="tab-page hidden" id="page-wishlist">
+    <div class="section-title">Tambah Wishlist</div>
+    <div class="form-card">
+      <div class="field">
+        <label>Nama Barang</label>
+        <input type="text" id="wishNama" placeholder="mis. Laptop baru">
+      </div>
+      <div class="field">
+        <label>Harga Target</label>
+        <input type="number" id="wishHarga" placeholder="0" inputmode="numeric">
+      </div>
+      <button class="btn-submit" id="wishSubmitBtn" onclick="tambahWishlist()">Tambah ke Wishlist</button>
+    </div>
+
+    <div class="section-title">Daftar Wishlist</div>
+    <div id="wishlistList"></div>
+  </div>
+
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="beranda" onclick="switchTab('beranda')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>
@@ -663,6 +703,10 @@
     <button class="tab-btn" data-tab="kalender" onclick="switchTab('kalender')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
       <span>Kalender</span>
+    </button>
+    <button class="tab-btn" data-tab="wishlist" onclick="switchTab('wishlist')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <span>Wishlist</span>
     </button>
     <button class="tab-btn" data-tab="profil" onclick="switchTab('profil')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
@@ -931,7 +975,7 @@ function showApp(user){
 
 // ---------- TABS ----------
 function switchTab(tab){
-  ["beranda","statistik","kalender","profil"].forEach(t => {
+  ["beranda","statistik","kalender","profil","wishlist"].forEach(t => {
     document.getElementById("page-" + t).classList.toggle("hidden", t !== tab);
   });
   document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -940,6 +984,7 @@ function switchTab(tab){
   if(tab === "statistik") renderStatistik();
   if(tab === "kalender") renderKalender();
   if(tab === "profil") populateProfil(currentUser);
+  if(tab === "wishlist") renderWishlist();
 }
 
 // ---------- MONTH NAVIGATION ----------
@@ -1124,6 +1169,107 @@ function renderBudgetAlert(){
   }
 }
 
+// ---------- WISHLIST ----------
+function currentSaldo(){
+  const masuk = data.filter(t=>t.tipe==="Masuk").reduce((a,b)=>a+Number(b.jumlah),0);
+  const keluar = data.filter(t=>t.tipe==="Keluar").reduce((a,b)=>a+Number(b.jumlah),0);
+  return masuk - keluar;
+}
+
+async function tambahWishlist(){
+  const nama = document.getElementById("wishNama").value.trim();
+  const harga = parseInt(document.getElementById("wishHarga").value);
+
+  if(!nama || !harga || harga <= 0){
+    alert("Isi nama barang dan harga yang valid ya.");
+    return;
+  }
+
+  const btn = document.getElementById("wishSubmitBtn");
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Menyimpan...";
+
+  const wishlist = (currentUser.user_metadata.wishlist || []).slice();
+  wishlist.push({ id: Date.now().toString(), nama, harga });
+
+  const { data: updated, error } = await sb.auth.updateUser({ data: { wishlist } });
+
+  btn.disabled = false;
+  btn.textContent = original;
+
+  if(error){ console.error(error); alert("Gagal menyimpan, coba lagi."); return; }
+
+  currentUser = updated.user;
+  document.getElementById("wishNama").value = "";
+  document.getElementById("wishHarga").value = "";
+  renderWishlist();
+  renderWishTeaser();
+}
+
+async function hapusWishlist(id){
+  if(!confirm("Hapus item wishlist ini?")) return;
+
+  const wishlist = (currentUser.user_metadata.wishlist || []).filter(w => w.id !== id);
+  const { data: updated, error } = await sb.auth.updateUser({ data: { wishlist } });
+
+  if(error){ console.error(error); return; }
+
+  currentUser = updated.user;
+  renderWishlist();
+  renderWishTeaser();
+}
+
+function renderWishlist(){
+  const listEl = document.getElementById("wishlistList");
+  const wishlist = currentUser.user_metadata.wishlist || [];
+  const saldo = currentSaldo();
+
+  if(wishlist.length === 0){
+    listEl.innerHTML = `<div class="empty-state">Belum ada wishlist.<br>Tambahin barang impian kamu di atas 👆</div>`;
+    return;
+  }
+
+  listEl.innerHTML = wishlist.map(w => {
+    const pct = Math.min((saldo / w.harga) * 100, 100);
+    const cukup = saldo >= w.harga;
+    const statusText = cukup ? "✅ Udah bisa dibeli!" : `Kurang ${formatRp(w.harga - saldo)} lagi`;
+    return `
+      <div class="wish-row">
+        <div class="wish-top">
+          <div class="wish-name">🎯 ${w.nama}</div>
+          <button class="wish-delete" onclick="hapusWishlist('${w.id}')">✕</button>
+        </div>
+        <div class="wish-bar-wrap"><div class="wish-bar ${cukup ? 'done' : ''}" style="width:${pct}%"></div></div>
+        <div class="wish-meta">
+          <span>${formatRp(w.harga)}</span>
+          <span class="${cukup ? 'wish-done' : ''}">${statusText}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderWishTeaser(){
+  const el = document.getElementById("wishTeaser");
+  const wishlist = currentUser.user_metadata.wishlist || [];
+
+  if(wishlist.length === 0){
+    el.classList.add("hidden");
+    return;
+  }
+
+  const saldo = currentSaldo();
+  const belum = wishlist
+    .filter(w => saldo < w.harga)
+    .sort((a,b) => (saldo/b.harga) - (saldo/a.harga));
+  const target = belum[0] || wishlist[0];
+  const pct = Math.min(Math.round((saldo / target.harga) * 100), 100);
+
+  el.classList.remove("hidden");
+  el.innerHTML = `🎯 <b>${target.nama}</b>: ${pct}% tercapai (${formatRp(saldo)} / ${formatRp(target.harga)})`;
+}
+
 sb.auth.onAuthStateChange((event, session) => {
   if (event === "PASSWORD_RECOVERY" && session && session.user) {
     currentUser = session.user;
@@ -1262,6 +1408,7 @@ async function hapusTransaksi(id){
 
 function render(){
   renderBudgetAlert();
+  renderWishTeaser();
   const masuk = data.filter(t=>t.tipe==="Masuk").reduce((a,b)=>a+Number(b.jumlah),0);
   const keluar = data.filter(t=>t.tipe==="Keluar").reduce((a,b)=>a+Number(b.jumlah),0);
   document.getElementById("saldo").textContent = formatRp(masuk-keluar);
