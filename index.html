@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<script>if(localStorage.getItem('dompet_theme')==='dark'){document.documentElement.classList.add('dark');}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#F5F5F7">
 <meta name="description" content="Dompet — aplikasi pencatat pemasukan dan pengeluaran pribadi. Catat transaksi, pantau saldo, dan kelola budget bulanan dengan mudah.">
@@ -27,6 +28,35 @@
     --divider: #E5E5EA;
     --radius: 18px;
   }
+  :root.dark{
+    --bg: #0A0A0B;
+    --card: #1C1C1E;
+    --text: #F2F2F2;
+    --text-secondary: #9A9A9E;
+    --divider: #2E2E31;
+  }
+  :root.dark .auth-field input,
+  :root.dark .field input,
+  :root.dark .field select{ background: #2C2C2E; color: var(--text); }
+  :root.dark .auth-field input::placeholder{ color: #6E6E72; }
+  :root.dark .segment{ background: #2C2C2E; }
+  :root.dark .cat-bar-wrap,
+  :root.dark .wish-bar-wrap{ background: #2E2E31; }
+  :root.dark .profile-card img{ background: #2E2E31; }
+  :root.dark .tx-delete,
+  :root.dark .wish-delete{ color: #6E6E72; }
+  :root.dark .form-card,
+  :root.dark .tx-list,
+  :root.dark .wish-row,
+  :root.dark .cal-day,
+  :root.dark .cal-summary,
+  :root.dark .upgrade-card,
+  :root.dark .feature-item{
+    box-shadow: none;
+    border: 1px solid var(--divider);
+  }
+  :root.dark .tx-item:active{ background: #232326; }
+  :root.dark .month-nav button{ box-shadow: none; border: 1px solid var(--divider); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body{
     margin:0;
@@ -481,6 +511,24 @@
   }
   .btn-logout-full:active{ opacity: 0.7; }
 
+  .theme-toggle-row{
+    display:flex; align-items:center; justify-content:space-between;
+    font-size: 14.5px; font-weight: 600;
+  }
+  .switch{ position:relative; display:inline-block; width: 48px; height: 28px; flex-shrink: 0; }
+  .switch input{ opacity: 0; width: 0; height: 0; }
+  .switch-slider{
+    position:absolute; inset: 0; cursor:pointer;
+    background: #E5E5EA; border-radius: 28px; transition: background 0.2s ease;
+  }
+  .switch-slider::before{
+    content:""; position:absolute; height: 22px; width: 22px; left: 3px; top: 3px;
+    background: white; border-radius: 50%; transition: transform 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch input:checked + .switch-slider{ background: var(--accent); }
+  .switch input:checked + .switch-slider::before{ transform: translateX(20px); }
+
   .wish-teaser{
     background: rgba(62,110,140,0.1); color: var(--accent);
     border-radius: 14px; padding: 12px 14px; margin-bottom: 16px;
@@ -770,6 +818,17 @@
       </button>
     </div>
 
+    <div class="section-title">Tampilan</div>
+    <div class="form-card">
+      <div class="theme-toggle-row">
+        <span>Mode Gelap</span>
+        <label class="switch">
+          <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode(this.checked)">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+    </div>
+
     <div class="section-title">Budget Bulanan</div>
     <div class="form-card">
       <div class="field">
@@ -846,6 +905,10 @@ let tipeAktif = "Masuk";
 let data = [];
 let currentUser = null;
 let editingId = null;
+
+if(document.documentElement.classList.contains("dark")){
+  document.querySelector('meta[name="theme-color"]').setAttribute("content", "#0A0A0B");
+}
 
 // ---------- AUTH ----------
 let authMode = "login"; // "login" | "signup"
@@ -1029,6 +1092,13 @@ function populateProfil(user){
   document.getElementById("userEmail").textContent = user.email || "Data hanya tersimpan di perangkat ini";
   document.getElementById("budgetInput").value = user.user_metadata.monthly_budget || "";
   document.getElementById("upgradeCard").classList.toggle("hidden", !user.is_anonymous);
+  document.getElementById("darkModeToggle").checked = document.documentElement.classList.contains("dark");
+}
+
+function toggleDarkMode(isDark){
+  document.documentElement.classList.toggle("dark", isDark);
+  localStorage.setItem("dompet_theme", isDark ? "dark" : "light");
+  document.querySelector('meta[name="theme-color"]').setAttribute("content", isDark ? "#0A0A0B" : "#F5F5F7");
 }
 
 async function upgradeWithEmail(){
@@ -1144,7 +1214,7 @@ function renderStatistik(){
   const listEl = document.getElementById("statCategoryList");
 
   if(entries.length === 0 || total === 0){
-    svg.innerHTML = `<circle cx="100" cy="100" r="80" fill="none" stroke="#E5E5EA" stroke-width="26"/>`;
+    svg.innerHTML = `<circle cx="100" cy="100" r="80" fill="none" style="stroke:var(--divider)" stroke-width="26"/>`;
     listEl.innerHTML = `<div class="empty-state">Belum ada pengeluaran di bulan ini.</div>`;
     return;
   }
@@ -1473,7 +1543,7 @@ async function tambahTransaksi(){
   if(!jumlah || jumlah <= 0){
     jumlahInput.focus();
     jumlahInput.style.background = "#FFE5E5";
-    setTimeout(()=> jumlahInput.style.background = "#F2F2F7", 400);
+    setTimeout(()=> jumlahInput.style.background = "", 400);
     return;
   }
   const kategori = document.getElementById("inputKategori").value;
