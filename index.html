@@ -51,7 +51,9 @@
   :root.dark .cal-day,
   :root.dark .cal-summary,
   :root.dark .upgrade-card,
-  :root.dark .feature-item{
+  :root.dark .feature-item,
+  :root.dark .insight-card,
+  :root.dark .trend-card{
     box-shadow: none;
     border: 1px solid var(--divider);
   }
@@ -480,6 +482,29 @@
   .donut-label{ font-size: 11.5px; color: var(--text-secondary); font-weight: 600; }
   .donut-value{ font-size: 18px; font-weight: 700; margin-top: 2px; }
 
+  /* Insight cards */
+  .insight-card{
+    display:flex; align-items:flex-start; gap: 12px;
+    background: var(--card); border-radius: 16px; padding: 14px 16px;
+    margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    animation: fadeInUp 0.4s ease backwards;
+  }
+  .insight-icon{
+    width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+    display:flex; align-items:center; justify-content:center; font-size: 17px;
+  }
+  .insight-icon.up{ background: rgba(255,59,48,0.1); }
+  .insight-icon.down{ background: rgba(52,199,89,0.1); }
+  .insight-icon.neutral{ background: rgba(62,110,140,0.1); }
+  .insight-text{ font-size: 13px; line-height: 1.45; padding-top: 3px; }
+  .insight-text b{ font-weight: 700; }
+
+  /* Trend chart */
+  .trend-card{
+    background: var(--card); border-radius: 18px; padding: 14px 10px 6px;
+    margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
   /* Calendar */
   .cal-summary{
     display:flex; background: var(--card); border-radius: 16px;
@@ -759,6 +784,8 @@
       <button onclick="changeMonth(1)">›</button>
     </div>
 
+    <div id="insightList"></div>
+
     <div class="donut-wrap">
       <svg viewBox="0 0 200 200" id="donutSvg"></svg>
       <div class="donut-center">
@@ -768,6 +795,11 @@
     </div>
 
     <div class="tx-list" id="statCategoryList"></div>
+
+    <div class="section-title">Tren 6 Bulan Terakhir</div>
+    <div class="trend-card">
+      <svg viewBox="0 0 300 130" id="trendSvg" style="width:100%; height:auto; display:block;"></svg>
+    </div>
   </div>
 
   <!-- KALENDER -->
@@ -1201,6 +1233,8 @@ function formatRpShort(n){
 
 function renderStatistik(){
   document.getElementById("statMonthLabel").textContent = monthLabel(viewMonth);
+  renderInsights();
+  renderTrendChart();
 
   const monthTx = getMonthData(viewMonth).filter(t => t.tipe === "Keluar");
   const total = monthTx.reduce((a,b)=>a+Number(b.jumlah),0);
@@ -1241,6 +1275,134 @@ function renderStatistik(){
       <div class="tx-amount out">${formatRp(jml)}</div>
     </div>
   `).join("");
+}
+
+// ---------- INSIGHT ----------
+function renderInsights(){
+  const el = document.getElementById("insightList");
+  const insights = [];
+
+  const thisMonthData = getMonthData(viewMonth);
+  const prevMonthDate = new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1);
+  const prevMonthData = getMonthData(prevMonthDate);
+
+  const thisTotal = thisMonthData.filter(t=>t.tipe==="Keluar").reduce((a,b)=>a+Number(b.jumlah),0);
+  const prevTotal = prevMonthData.filter(t=>t.tipe==="Keluar").reduce((a,b)=>a+Number(b.jumlah),0);
+
+  if(prevTotal > 0){
+    const pct = Math.round(((thisTotal - prevTotal) / prevTotal) * 100);
+    if(pct !== 0){
+      const naik = pct > 0;
+      insights.push({
+        icon: naik ? "📈" : "📉",
+        type: naik ? "up" : "down",
+        html: `Pengeluaran bulan ini <b>${naik ? 'naik' : 'turun'} ${Math.abs(pct)}%</b> dibanding bulan lalu.`
+      });
+    }
+  }
+
+  const thisByCat = {}, prevByCat = {};
+  thisMonthData.filter(t=>t.tipe==="Keluar").forEach(t => thisByCat[t.kategori] = (thisByCat[t.kategori]||0) + Number(t.jumlah));
+  prevMonthData.filter(t=>t.tipe==="Keluar").forEach(t => prevByCat[t.kategori] = (prevByCat[t.kategori]||0) + Number(t.jumlah));
+
+  let biggestJump = null;
+  Object.keys(thisByCat).forEach(kat => {
+    const prev = prevByCat[kat] || 0;
+    if(prev > 0){
+      const diff = thisByCat[kat] - prev;
+      if(diff > 0 && (!biggestJump || diff > biggestJump.diff)){
+        biggestJump = { kat, diff, pct: Math.round((diff/prev)*100) };
+      }
+    }
+  });
+  if(biggestJump){
+    insights.push({
+      icon: "⚠️", type: "up",
+      html: `Pengeluaran <b>${biggestJump.kat}</b> naik <b>${biggestJump.pct}%</b> (+${formatRp(biggestJump.diff)}) dari bulan lalu.`
+    });
+  }
+
+  const catEntries = Object.entries(thisByCat).sort((a,b)=>b[1]-a[1]);
+  if(catEntries.length > 0 && thisTotal > 0){
+    const [topKat, topAmt] = catEntries[0];
+    const pctOfTotal = Math.round((topAmt/thisTotal)*100);
+    insights.push({
+      icon: ICONS[topKat] || "📌", type: "neutral",
+      html: `<b>${topKat}</b> jadi kategori terbesar bulan ini, ${pctOfTotal}% dari total pengeluaran.`
+    });
+  }
+
+  const now = new Date();
+  const isCurrentMonth = viewMonth.getFullYear() === now.getFullYear() && viewMonth.getMonth() === now.getMonth();
+  if(isCurrentMonth){
+    const weekAgo = Date.now() - 7*24*60*60*1000;
+    const weekTx = data.filter(t => t.tipe === "Keluar" && t.ts >= weekAgo);
+    if(weekTx.length > 0){
+      const biggest = weekTx.reduce((a,b) => Number(a.jumlah) > Number(b.jumlah) ? a : b);
+      insights.push({
+        icon: "💸", type: "neutral",
+        html: `Pengeluaran terbesar minggu ini: <b>${biggest.kategori}</b> sebesar ${formatRp(biggest.jumlah)}.`
+      });
+    }
+  }
+
+  if(insights.length === 0){
+    el.innerHTML = `<div class="empty-state">Belum cukup data buat kasih insight.<br>Terus catat transaksi ya!</div>`;
+    return;
+  }
+
+  el.innerHTML = insights.map(i => `
+    <div class="insight-card">
+      <div class="insight-icon ${i.type}">${i.icon}</div>
+      <div class="insight-text">${i.html}</div>
+    </div>
+  `).join("");
+}
+
+// ---------- TREND CHART ----------
+function getLastNMonths(endMonth, n){
+  const months = [];
+  for(let i = n - 1; i >= 0; i--){
+    months.push(new Date(endMonth.getFullYear(), endMonth.getMonth() - i, 1));
+  }
+  return months;
+}
+
+function renderTrendChart(){
+  const months = getLastNMonths(viewMonth, 6);
+  const totals = months.map(m => getMonthData(m).filter(t=>t.tipe==="Keluar").reduce((a,b)=>a+Number(b.jumlah),0));
+  const max = Math.max(...totals, 1);
+
+  const padX = 16, top = 10, bottom = 96;
+  const stepX = (300 - padX * 2) / (months.length - 1);
+
+  const points = totals.map((val, i) => {
+    const x = padX + i * stepX;
+    const y = bottom - (val / max) * (bottom - top);
+    return [x, y];
+  });
+
+  const linePath = points.map((p, i) => (i === 0 ? "M" : "L") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+  const areaPath = linePath + ` L${points[points.length-1][0].toFixed(1)},${bottom} L${points[0][0].toFixed(1)},${bottom} Z`;
+  const dots = points.map(([x,y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="#3E6E8C"/>`).join("");
+  const labels = months.map((m, i) => {
+    const x = padX + i * stepX;
+    const isLast = i === months.length - 1;
+    return `<text x="${x.toFixed(1)}" y="118" font-size="9.5" fill="${isLast ? '#3E6E8C' : '#8A8A8E'}" font-weight="${isLast ? '700' : '400'}" text-anchor="middle">${m.toLocaleDateString("id-ID", {month:"short"})}</text>`;
+  }).join("");
+
+  document.getElementById("trendSvg").innerHTML = `
+    <defs>
+      <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3E6E8C" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="#3E6E8C" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path d="${areaPath}" fill="url(#trendFill)" stroke="none"/>
+    <path d="${linePath}" fill="none" stroke="#3E6E8C" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+    ${labels}
+  `;
 }
 
 // ---------- KALENDER ----------
