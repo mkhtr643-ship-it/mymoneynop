@@ -916,6 +916,231 @@
     </button>
   </div>
 
+  <!-- ===== Dompet Chat Widget (rule-based, no API key) ===== -->
+  <style>
+    #dcw-anchor{ position:fixed; left:0; right:0; bottom:0; max-width:480px; margin:0 auto; height:0; pointer-events:none; z-index:60; }
+    #dompet-chat-fab, #dompet-chat-panel, #dompet-chat-panel *{ box-sizing:border-box; }
+
+    #dompet-chat-fab{
+      position:absolute; right:20px; bottom:calc(70px + env(safe-area-inset-bottom));
+      width:56px; height:56px; border-radius:50%; border:none;
+      background:linear-gradient(135deg, var(--accent), var(--candy));
+      color:#fff; display:flex; align-items:center; justify-content:center;
+      box-shadow:0 8px 20px rgba(62,110,140,0.35); cursor:pointer; pointer-events:auto;
+      transition:transform 0.2s ease;
+    }
+    #dompet-chat-fab:hover{ transform:scale(1.06); }
+    #dompet-chat-fab:active{ transform:scale(0.96); }
+    #dompet-chat-fab:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+
+    #dompet-chat-panel{
+      position:absolute; right:20px; bottom:calc(70px + env(safe-area-inset-bottom));
+      width:340px; max-width:calc(100vw - 40px); height:min(560px, 68vh);
+      background:var(--card); border-radius:var(--radius);
+      box-shadow:0 20px 50px rgba(0,0,0,0.28);
+      display:flex; flex-direction:column; overflow:hidden;
+      color:var(--text); pointer-events:auto; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      transform-origin:bottom right; animation:dcw-pop 0.22s ease;
+    }
+    #dompet-chat-panel[hidden]{ display:none; }
+
+    @keyframes dcw-pop{ from{ opacity:0; transform:scale(0.9) translateY(12px); } to{ opacity:1; transform:scale(1) translateY(0); } }
+    @media (prefers-reduced-motion: reduce){ #dompet-chat-panel{ animation:none; } #dompet-chat-fab{ transition:none; } }
+
+    @media (max-width:480px){
+      #dompet-chat-panel{
+        right:0; left:0; bottom:0; width:100%; max-width:100%; height:72vh;
+        border-radius:var(--radius) var(--radius) 0 0;
+        padding-bottom:env(safe-area-inset-bottom);
+        transform-origin:bottom center;
+      }
+    }
+
+    .dcw-header{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--divider); flex-shrink:0; }
+    .dcw-header strong{ font-size:15px; }
+    .dcw-header small{ display:block; color:var(--text-secondary); font-size:11.5px; margin-top:1px; }
+    #dompet-chat-close{ border:none; background:none; color:var(--text-secondary); font-size:16px; width:26px; height:26px; border-radius:50%; cursor:pointer; }
+    #dompet-chat-close:hover{ background:var(--bg); }
+
+    .dcw-messages{ flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:9px; }
+    .dcw-msg{ max-width:84%; padding:9px 13px; border-radius:15px; font-size:13.5px; line-height:1.45; white-space:pre-wrap; word-wrap:break-word; }
+    .dcw-msg.user{ align-self:flex-end; background:linear-gradient(135deg, var(--accent), var(--candy)); color:#fff; border-bottom-right-radius:4px; }
+    .dcw-msg.bot{ align-self:flex-start; background:var(--bg); color:var(--text); border-bottom-left-radius:4px; }
+
+    .dcw-typing{ align-self:flex-start; display:flex; gap:4px; padding:11px 13px; background:var(--bg); border-radius:15px; border-bottom-left-radius:4px; }
+    .dcw-typing span{ width:6px; height:6px; border-radius:50%; background:var(--text-secondary); animation:dcw-bounce 1.2s infinite ease-in-out; }
+    .dcw-typing span:nth-child(2){ animation-delay:0.15s; }
+    .dcw-typing span:nth-child(3){ animation-delay:0.3s; }
+    @keyframes dcw-bounce{ 0%,60%,100%{ transform:translateY(0); opacity:0.5; } 30%{ transform:translateY(-4px); opacity:1; } }
+
+    .dcw-suggestions{ display:flex; flex-wrap:wrap; gap:7px; padding:0 16px 10px; flex-shrink:0; }
+    .dcw-chip{ border:1px solid var(--divider); background:none; color:var(--text); font-size:12px; padding:6px 11px; border-radius:999px; cursor:pointer; font-family:inherit; }
+    .dcw-chip:hover{ background:var(--bg); }
+
+    .dcw-input-row{ display:flex; gap:8px; padding:10px 12px; border-top:1px solid var(--divider); flex-shrink:0; }
+    #dompet-chat-input{ flex:1; border:1px solid var(--divider); background:var(--bg); color:var(--text); border-radius:999px; padding:9px 15px; font-size:13.5px; font-family:inherit; outline:none; }
+    #dompet-chat-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+    #dompet-chat-send{ width:38px; height:38px; border-radius:50%; border:none; background:linear-gradient(135deg, var(--accent), var(--candy)); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+    #dompet-chat-send:disabled{ opacity:0.5; cursor:default; }
+  </style>
+
+  <div id="dcw-anchor">
+    <button id="dompet-chat-fab" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="dompet-chat-panel" aria-label="Buka asisten keuangan">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+    </button>
+
+    <div id="dompet-chat-panel" role="dialog" aria-modal="false" aria-label="Asisten Keuangan" hidden>
+      <div class="dcw-header">
+        <div><strong>Asisten Keuangan</strong><small>Tanya soal saldo & keuangan</small></div>
+        <button id="dompet-chat-close" type="button" aria-label="Tutup">✕</button>
+      </div>
+      <div id="dompet-chat-messages" class="dcw-messages"></div>
+      <div id="dompet-chat-suggestions" class="dcw-suggestions">
+        <button type="button" class="dcw-chip">Cek saldo aku</button>
+        <button type="button" class="dcw-chip">Pengeluaran terbanyak apa?</button>
+        <button type="button" class="dcw-chip">Tips hemat</button>
+      </div>
+      <form id="dompet-chat-form" class="dcw-input-row">
+        <input id="dompet-chat-input" type="text" placeholder="Tanya soal keuangan..." maxlength="300" autocomplete="off" />
+        <button type="submit" id="dompet-chat-send" aria-label="Kirim">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const fab = document.getElementById('dompet-chat-fab');
+    const panel = document.getElementById('dompet-chat-panel');
+    const closeBtn = document.getElementById('dompet-chat-close');
+    const messagesEl = document.getElementById('dompet-chat-messages');
+    const suggestionsEl = document.getElementById('dompet-chat-suggestions');
+    const form = document.getElementById('dompet-chat-form');
+    const input = document.getElementById('dompet-chat-input');
+    const sendBtn = document.getElementById('dompet-chat-send');
+    let isOpen = false;
+
+    function dcwEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function openPanel(){
+      isOpen = true; panel.hidden = false; fab.style.display = 'none';
+      fab.setAttribute('aria-expanded','true');
+      if (messagesEl.children.length === 0){
+        addMsg('bot', 'Halo! Aku bisa bantu cek saldo, pengeluaran per kategori, sampe tanya-tanya seputar budgeting & investasi. Coba tanya apa aja 👋');
+      }
+      input.focus();
+    }
+    function closePanel(){
+      isOpen = false; panel.hidden = true; fab.style.display = 'flex';
+      fab.setAttribute('aria-expanded','false');
+    }
+    fab.addEventListener('click', openPanel);
+    closeBtn.addEventListener('click', closePanel);
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && isOpen) closePanel(); });
+
+    function addMsg(who, html){
+      const d = document.createElement('div');
+      d.className = 'dcw-msg ' + who;
+      d.innerHTML = html;
+      messagesEl.appendChild(d);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    function showTyping(){
+      const d = document.createElement('div');
+      d.className = 'dcw-typing'; d.id = 'dompet-chat-typing';
+      d.innerHTML = '<span></span><span></span><span></span>';
+      messagesEl.appendChild(d); messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    function hideTyping(){ const t = document.getElementById('dompet-chat-typing'); if (t) t.remove(); }
+
+    function dcwReply(msg){
+      const src = (typeof data !== 'undefined' && Array.isArray(data)) ? data : [];
+      const income = src.filter(t => t.tipe === 'Masuk').reduce((s,t) => s + Number(t.jumlah||0), 0);
+      const expense = src.filter(t => t.tipe === 'Keluar').reduce((s,t) => s + Number(t.jumlah||0), 0);
+      const saldo = income - expense;
+
+      if (/saldo|berapa uang|uang saya|cek saldo|sisa uang/.test(msg))
+        return `💰 Saldo kamu saat ini: <b>${formatRp(saldo)}</b><br><br>Pemasukan: ${formatRp(income)}<br>Pengeluaran: ${formatRp(expense)}<br><br>${saldo < 0 ? '⚠️ Saldo lagi minus, coba kurangi pengeluaran non-penting dulu.' : saldo < 500000 ? 'Saldo masih tipis, tetap hati-hati ya.' : 'Kondisi keuangan terlihat stabil 👍'}`;
+
+      if (/cara mulai investasi|mulai investasi|bagaimana investasi|investasi pemula/.test(msg))
+        return `📈 <b>Cara mulai investasi:</b><br><br>1. Siapkan dana darurat 3-6 bulan pengeluaran<br>2. Lunasi utang berbunga tinggi dulu<br>3. Mulai dari risiko rendah: Reksadana Pasar Uang, Deposito, Emas<br>4. Setelah nyaman, baru coba saham/reksadana saham<br>5. Investasi rutin tiap bulan lebih baik daripada sekali besar<br><br>💡 Jangan investasi uang yang dibutuhkan dalam 1-2 tahun ke depan.`;
+
+      if (/reksadana|reksa dana/.test(msg))
+        return `📊 <b>Jenis reksadana:</b><br><br>• Pasar Uang — risiko paling rendah<br>• Pendapatan Tetap — obligasi<br>• Campuran — saham + obligasi<br>• Saham — potensi tinggi, fluktuasi tinggi<br><br>Bisa mulai dari Rp10.000 di Bibit, Bareksa, Ajaib, dll.`;
+
+      if (/saham|stock|bursa/.test(msg))
+        return `📉 <b>Saham untuk pemula:</b><br><br>• Pelajari dasar fundamental dulu<br>• Mulai dari saham blue chip<br>• Jangan FOMO ikut tips medsos<br>• Diversifikasi, jangan taruh semua di 1 saham<br>• Jangka panjang biasanya lebih aman daripada trading harian`;
+
+      if (/emas|gold/.test(msg))
+        return `🥇 <b>Investasi emas:</b><br><br>Bagus buat pelindung nilai (hedge) terhadap inflasi. Bisa fisik (Antam, UBS) atau digital (Pegadaian, Tokopedia Emas, Pluang). Cocok jangka menengah-panjang.`;
+
+      if (/crypto|bitcoin|kripto|\beth\b/.test(msg))
+        return `⚡ <b>Crypto:</b><br><br>Sangat volatil, bisa naik/anjlok tajam dalam sehari. Hanya pakai uang yang siap hilang. Jangan all-in. Bukan tempat buat dana darurat.`;
+
+      if (/investasi|invest/.test(msg))
+        return `Ada beberapa instrumen investasi. Mau gua jelasin yang mana?<br><br>• Reksadana<br>• Saham<br>• Emas<br>• Crypto<br><br>Atau tanya "cara mulai investasi" buat panduan pemula.`;
+
+      if (/budget|anggaran|atur uang|cara atur/.test(msg))
+        return `📋 <b>Metode Budget 50/30/20:</b><br><br>• 50% Kebutuhan (makan, sewa, transport, tagihan)<br>• 30% Keinginan (hiburan, hobi)<br>• 20% Tabungan + Investasi<br><br>Yang penting: catat semua pengeluaran dulu biar tau ke mana uang pergi.`;
+
+      if (/hemat|tips hemat|cara hemat|boros/.test(msg))
+        return `💡 <b>Tips hemat:</b><br><br>1. Catat semua pengeluaran (udah bisa di app ini)<br>2. Masak sendiri lebih sering<br>3. Tunggu 24 jam sebelum beli barang non-penting<br>4. Matiin langganan yang jarang dipake<br>5. Sisihkan 10-20% gaji begitu masuk<br>6. Hindari cicilan konsumtif`;
+
+      if (/kategori|terbanyak|paling banyak|analisis/.test(msg)){
+        const exp = src.filter(t => t.tipe === 'Keluar');
+        if (!exp.length) return 'Belum ada data pengeluaran nih. Yuk mulai catat dulu di Beranda!';
+        const map = {};
+        exp.forEach(t => map[t.kategori] = (map[t.kategori]||0) + Number(t.jumlah||0));
+        const sorted = Object.entries(map).sort((a,b) => b[1]-a[1]);
+        return '📊 <b>Pengeluaran per kategori:</b><br><br>' + sorted.map(([c,a],i) => `${i+1}. ${c}: ${formatRp(a)}`).join('<br>');
+      }
+
+      if (/saran|rekomendasi|apa yang harus|bagaimana keuangan/.test(msg)){
+        if (saldo < 0) return '⚠️ Saldo kamu minus. Prioritaskan kurangi pengeluaran dan cari pemasukan tambahan dulu.';
+        if (expense > income * 0.85 && income > 0) return 'Pengeluaran udah cukup tinggi dibanding pemasukan. Coba cek tab Statistik dan potong yang gak esensial.';
+        if (src.length < 5) return 'Data masih sedikit. Terus catat transaksi biar saran ke depannya lebih akurat.';
+        return 'Keuangan kamu terlihat cukup sehat. Tetap konsisten catat, sisihkan tabungan, dan pertimbangkan mulai investasi kecil-kecilan.';
+      }
+
+      if (/cara pakai|tutorial|bantuan|help|bagaimana pakai/.test(msg))
+        return `Cara pakai Dompet:<br><br>1. <b>Beranda</b> — tambah pemasukan/pengeluaran<br>2. <b>Statistik</b> — lihat grafik & ringkasan<br>3. <b>Kalender</b> — transaksi per tanggal<br>4. <b>Wishlist</b> — target beli barang impian<br>5. <b>Profil</b> — ganti tema & data akun<br><br>Aku bisa dibuka kapan aja lewat bubble di kanan bawah.`;
+
+      if (/halo|hai|^hi\b|hello|pagi|siang|malam|selamat/.test(msg))
+        return 'Halo! Ada yang bisa dibantu soal keuangan kamu hari ini? 😊';
+
+      if (/terima kasih|makasih|thanks/.test(msg))
+        return 'Sama-sama! Semoga keuangannya makin sehat 💪';
+
+      if (/apa itu|jelaskan|pengertian/.test(msg))
+        return 'Aku bisa jelasin banyak topik keuangan & investasi. Coba lebih spesifik, misal: "apa itu reksadana?"';
+
+      return `Aku bisa bantu soal:<br><br>• Cek saldo & analisis pengeluaranmu<br>• Cara mulai investasi<br>• Reksadana, saham, emas, crypto<br>• Tips budget & hemat<br><br>Coba tanya lebih spesifik ya!`;
+    }
+
+    function send(text){
+      if (!text) return;
+      addMsg('user', dcwEsc(text));
+      input.value = '';
+      suggestionsEl.style.display = 'none';
+      sendBtn.disabled = true;
+      showTyping();
+      setTimeout(function(){
+        hideTyping();
+        addMsg('bot', dcwReply(text.toLowerCase()));
+        sendBtn.disabled = false;
+        input.focus();
+      }, 450 + Math.random()*500);
+    }
+
+    form.addEventListener('submit', function(e){ e.preventDefault(); send(input.value.trim()); });
+    suggestionsEl.querySelectorAll('.dcw-chip').forEach(function(chip){
+      chip.addEventListener('click', function(){ send(chip.textContent); });
+    });
+  })();
+  </script>
+  <!-- ===== End Dompet Chat Widget ===== -->
+
 </div>
 
 <script>
